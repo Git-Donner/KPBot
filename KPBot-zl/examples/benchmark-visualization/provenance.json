@@ -1,0 +1,10 @@
+{
+  "input": "D:\\workspace\\KPBot\\KPBot-zl\\Plugins\\code-optimizer\\skills\\benchmark-visualization\\assets\\examples\\repeated-runs.csv",
+  "sha256": "42a342d81141a91e82c30d2ee9b48ce5f3549e96808684791289ce32608f6b0b",
+  "source_row_definition": "zero-based record index after adapter; CSV excludes header",
+  "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+  "matplotlib": "3.11.2",
+  "quantile_method": "linear interpolation",
+  "std_ddof": 1,
+  "script_sha256": "ca2b733242cea148076c4de86102339da28e7eca90e8e871298b6cfc2a75167e"
+}

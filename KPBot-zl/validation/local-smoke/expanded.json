@@ -1,0 +1,78 @@
+{
+  "input": {
+    "path": "samples.csv",
+    "format": "csv"
+  },
+  "mapping": {
+    "metrics": [
+      {
+        "name": "latency_ms",
+        "column": "latency_ms",
+        "unit": "ms",
+        "sample_level": "summary"
+      },
+      {
+        "name": "throughput_mib_s",
+        "column": "throughput_mib_s",
+        "unit": "MiB/s",
+        "sample_level": "summary"
+      },
+      {
+        "name": "min_ms",
+        "column": "min_ms",
+        "unit": "ms",
+        "sample_level": "summary"
+      },
+      {
+        "name": "max_ms",
+        "column": "max_ms",
+        "unit": "ms",
+        "sample_level": "summary"
+      },
+      {
+        "name": "cpu_seconds",
+        "column": "cpu_seconds",
+        "unit": "s",
+        "sample_level": "summary"
+      },
+      {
+        "name": "cpu_pct",
+        "column": "cpu_pct",
+        "unit": "% of one core",
+        "sample_level": "summary"
+      },
+      {
+        "name": "compressed_ratio",
+        "column": "compressed_ratio",
+        "unit": "output/input",
+        "sample_level": "summary"
+      }
+    ]
+  },
+  "charts": [
+    {
+      "id": "scatter",
+      "type": "scatter",
+      "metric": "latency_ms",
+      "x": "size_mib",
+      "x_type": "numeric",
+      "series": "level",
+      "facet": "workload",
+      "unit_id": "run_id",
+      "title": "Real zlib measurements: latency_ms",
+      "aggregate": "median",
+      "aggregate_summary": true,
+      "ylim": [
+        0,
+        0.10522499999999999
+      ]
+    }
+  ],
+  "output": {
+    "directory": "charts",
+    "formats": [
+      "svg",
+      "png"
+    ]
+  }
+}

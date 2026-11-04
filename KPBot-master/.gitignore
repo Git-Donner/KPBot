@@ -1,0 +1,26 @@
+# npm
+node_modules/
+*.tgz
+npm-debug.log*
+.npm/
+
+# Python
+__pycache__/
+*.pyc
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# SKILL 采集证据产物（运行时生成）
+*-evidence/
+
+# case 运行产物（entrypoint 写入，不入库）
+Plugins/app-tuner/skills/*/cases/*/results/

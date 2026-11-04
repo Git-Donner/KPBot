@@ -1,0 +1,433 @@
+# KPBot
+
+[![License: Mulan PSL v2](https://img.shields.io/badge/License-Mulan%20PSL%20v2-blue.svg)](LICENSE)
+[![Scenarios: 15](https://img.shields.io/badge/Scenarios-15-brightgreen.svg)](#optimization-scenarios)
+
+面向鲲鹏/ARM 生态的性能优化Agent，为 Claude Code 和 OpenCode 提供专业的性能分析与优化插件。
+
+## 📰 最新动态
+
+<!-- 按主线合入时间倒排；同一场景的多个 PR 合并展示，日期取最近一次相关合入。 -->
+
+- **2026/10/12** — **code-optimizer** 扩展 5 个知识型 SKILL 的 Rust 支持，覆盖 Rust 热点代码的操作融合、精度变换、特例快路径与性能分析等优化需求。（[!72](https://gitcode.com/openeuler/KPBot/pull/72)）
+- **2026/10/12** — **app-tuner** 新增昇腾 NPU 状态与 HCCN 网络采集 SKILL，并整合鲲鹏 + 昇腾场景的绑核、Host 内存分配、编译打包和应用配置经验，覆盖 vLLM 推理与 torchtitan-npu 训练调优。（[!68](https://gitcode.com/openeuler/KPBot/pull/68)、[!58](https://gitcode.com/openeuler/KPBot/pull/58)、[!56](https://gitcode.com/openeuler/KPBot/pull/56)、[!47](https://gitcode.com/openeuler/KPBot/pull/47)、[!27](https://gitcode.com/openeuler/KPBot/pull/27)）
+- **2026/10/12** — **app-tuner** 新增 nmon、进程与网络采集 SKILL，并扩展 DevKit Java 性能分析，覆盖服务器应用的 CPU、内存、I/O、网络及 Java 热点诊断。（[!60](https://gitcode.com/openeuler/KPBot/pull/60)、[!34](https://gitcode.com/openeuler/KPBot/pull/34)）
+- **2026/09/15** — **code-optimizer** 新增 `sra-dag-tuning` SKILL，覆盖鲲鹏搜索推荐链路中召回、排序、特征处理与 DAG 调度的全栈优化。（[!57](https://gitcode.com/openeuler/KPBot/pull/57)）
+- **2026/09/11** — **code-optimizer** 新增 `parallel-unique-pytorch` SKILL，覆盖 PyTorch Embedding lookup 的 Host 侧并行去重与支持 `torch.compile` 的自定义算子集成。（[!52](https://gitcode.com/openeuler/KPBot/pull/52)）
+- **2026/09/11** — **code-optimizer** 新增 ORT/KDNN Attention 与 TensorFlow 推理优化 SKILL，并整合 TF 专项工作流，覆盖 CPU 推理的子图融合、内核接入、线程调度与性能验证。（[!51](https://gitcode.com/openeuler/KPBot/pull/51)、[!41](https://gitcode.com/openeuler/KPBot/pull/41)、[!31](https://gitcode.com/openeuler/KPBot/pull/31)）
+- **2026/09/11** — **code-optimizer** 新增 `kunpeng-llama-cpp-tuning` SKILL，覆盖鲲鹏 CPU 上 llama.cpp Embedding 推理的 ggml 后端、权重转换缓存与点积热点优化。（[!55](https://gitcode.com/openeuler/KPBot/pull/55)）
+- **2026/09/11** — **code-optimizer** 新增 `brgemm-optimization` SKILL，覆盖 GEMM 在 oneDNN、ONNX Runtime 等框架集成中的权重预打包、内存布局、线程与缓存优化。（[!53](https://gitcode.com/openeuler/KPBot/pull/53)）
+- **2026/09/08** — **code-optimizer** 新增 `vsag-rabitq-optimization` SKILL，覆盖 ARM/SVE 上 VSAG HGraph RaBitQ 向量检索的并发查询组批、后端迁移与计算优化。（[!48](https://gitcode.com/openeuler/KPBot/pull/48)）
+- **2026/09/07** — **code-optimizer** 新增 `hashmap-optimization` SKILL，覆盖特征查表与 KV 查询中哈希表的计算、带宽和访问延迟瓶颈优化。（[!46](https://gitcode.com/openeuler/KPBot/pull/46)）
+
+<a id="optimization-scenarios"></a>
+
+## 🎯 优化场景
+
+**app-tuner** 在不修改业务源码的前提下，通过系统与 OS 配置、运行环境、编译参数、性能库替换和应用参数进行调优；**code-optimizer** 通过修改源码优化算法、数据结构、算子和框架执行路径。两者可以围绕同一业务场景协同使用。
+
+当前按下表业务场景去重统计，共覆盖 **15 类场景**；场景数不等同于 SKILL 数，具体模型、硬件与验证范围以链接中的说明为准。
+
+<!-- 增删场景时同步更新顶部 Scenarios 徽章及上方场景数。 -->
+
+| 优化场景 | 场景优化简介 |
+|----------|--------------|
+| [Qwen2.5-1.5B 模型 @ 鲲鹏 + 昇腾 vLLM 推理](Plugins/app-tuner/skills/kpbot-app-tuner/subskills/application-config-optimization/references/ascend-vllm-config.md) | **app-tuner**：围绕 vLLM-Ascend 推理吞吐与首 Token 延迟，调整 Host 线程、CPU/NUMA 亲和性、任务队列、内存分配及 KV cache/batch 配置。 |
+| [DeepSeek-V4 debug 模型 @ ARM Host + 昇腾 torchtitan-npu 训练](Plugins/app-tuner/skills/kpbot-app-tuner/subskills/application-config-optimization/references/ascend-torchtitan-training-config.md) | **app-tuner**：面向训练 Host 瓶颈，结合绑核、分配器选型、编译与 wheel 打包，调优 optimizer swap、activation checkpoint 和 FSDP 配置；已有案例为 307M 参数 debug 模型。 |
+| [TensorFlow CPU 推理 / Serving @ 鲲鹏](Plugins/code-optimizer/skills/tf-inference-optimizer/SKILL.md) | **code-optimizer**：通过图与运行时 profiling 定位瓶颈，进行图重写、算子融合、自定义 fused kernel 和性能库接入，并验证端到端吞吐与延迟。 |
+| [ONNX Runtime Attention / MHA @ 鲲鹏 + KDNN](Plugins/code-optimizer/skills/ort-kdnn-attention-opt/SKILL.md) | **code-optimizer**：识别 Attention/MHA 子图，实施融合内核与 ORT 框架接入，配套模型扫描、正确性验证和 A/B 基准。 |
+| [llama.cpp Embedding 推理 @ 鲲鹏 CPU](Plugins/code-optimizer/skills/kunpeng-llama-cpp-tuning/SKILL.md) | **code-optimizer**：优化 llama.cpp/ggml 的 CPU 后端路由、权重转换缓存和点积实现，按短、中、长输入验证 Embedding 精度与延迟。 |
+| [GEMM / BRGEMM 框架集成 @ 鲲鹏](Plugins/code-optimizer/skills/brgemm-optimization/SKILL.md) | **code-optimizer**：面向 oneDNN adapter、ONNX Runtime EP 与自研 runtime，优化 PackB/PrePack、blocked layout、scratch、parallel-K、分块和 primitive cache。 |
+| [PyTorch Embedding lookup @ ARM CPU](Plugins/code-optimizer/skills/parallel-unique-pytorch/SKILL.md) | **code-optimizer**：针对 raw_id → unique → hashmap → gather 链路，使用并行排序与 OpenMP 优化 Host 侧去重，并注册兼容 `torch.compile` 的自定义算子。 |
+| [Faiss 向量检索](Plugins/code-optimizer/skills/faiss-optimize/SKILL.md) | **code-optimizer**：编排 IVFPQ、FastScan、HNSW、RaBitQ 与 TurboQuant 的源码分析、构建、基线、采样、候选实现、正确性验证和独立性能验收；按实际版本确认索引与 SIMD 能力。 |
+| [VSAG HGraph RaBitQ 向量检索 @ ARM/SVE](Plugins/code-optimizer/skills/vsag-rabitq-optimization/SKILL.md) | **code-optimizer**：优化并发查询组批、worker 生命周期、OpenBLAS/CBLAS 后端与 SIMD/SVE lookup，并改进 L2 计算、数据布局及临时缓冲区。 |
+| [搜索推荐 DAG @ 鲲鹏](Plugins/code-optimizer/skills/sra-dag-tuning/SKILL.md) | **code-optimizer**：优化召回、粗排、精排和重排中的关键路径并行、批量打分、Top-K、特征缓存与锁竞争；可结合 **app-tuner** 完成绑核、系统配置和性能库调优。 |
+| [哈希表与特征 / KV 查表 @ 鲲鹏](Plugins/code-optimizer/skills/hashmap-optimization/SKILL.md) | **code-optimizer**：从查询链路与负载特征出发，区分计算、带宽和延迟瓶颈，通过数据布局与查询实现等改动优化查表热点。 |
+| [MySQL / InnoDB OLTP @ 鲲鹏](Plugins/app-tuner/skills/kpbot-app-tuner/subskills/database-workload-analysis/SKILL.md) | **app-tuner**：结合 sysbench 与数据库内部指标，调优 NUMA/IRQ 亲和性、buffer pool、线程与表缓存、OS 参数及 PGO 编译配置。 |
+| [Spark / Flink 大数据处理 @ ARM](Plugins/app-tuner/skills/kpbot-app-tuner/subskills/application-config-optimization/references/bigdata-playbook.md) | **app-tuner**：根据物理机或容器的 CPU、内存配额，调整 executor、TaskManager、并行度、内存与框架参数，并结合性能库选型优化运行环境。 |
+| [通用服务器应用与 Java 服务 @ 鲲鹏](Plugins/app-tuner/README.md) | **app-tuner**：使用 DevKit、nmon、进程与网络采集定位 CPU、内存、I/O 和网络瓶颈，调优 BIOS、OS、NUMA、网卡队列、编译参数与性能库。 |
+| [C/C++ 性能库与热点代码 @ 鲲鹏 / ARM](Plugins/code-optimizer/skills/kpbot-code-optimizer/SKILL.md) | **code-optimizer**：覆盖 NEON/SVE/SME 向量化、循环展开、分支消除、操作融合、预取、访存布局、精度变换与汇编优化；部分知识型 SKILL 已扩展 Rust 支持。 |
+
+## 🧩 插件列表
+
+| 插件 | 类别 | 描述 |
+|------|------|------|
+| **[code-optimizer](Plugins/code-optimizer/)** | performance | 鲲鹏/ARM 代码优化 — 自动化 C/C++ 性能分析与优化 Pipeline，含 TF 与 ORT/KDNN 推理优化、Faiss 向量检索优化、OpenZL 压缩内核与基准调优（72 skills） |
+| **[app-tuner](Plugins/app-tuner/)** | performance | 应用级调优 — 针对具体应用场景的深度性能调优 |
+| **[openwiki-sync](Plugins/public/openwiki-sync/)** | documentation | OpenWiki 代码仓文档生成与同步 — 独立 wiki 仓托管 + commit 级联动更新 + 关联恢复，支持 GitCode/Gitee/GitHub |
+
+### 即将推出
+
+| 插件 | 类别 | 描述 |
+|------|------|------|
+| **system-profiler** | analysis | 系统 profiling — 系统级性能分析与瓶颈定位 |
+| **x86-to-arm** | migration | x86 到 ARM 平台迁移 — 代码移植、指令映射、兼容性分析 |
+
+---
+
+## 📥 安装
+
+KPBot 提供两种安装方式：npm 包（推荐，正式版本）和 git clone（开发者，获取最新 HEAD）。
+
+### 方式一：npm 安装（推荐）
+
+```bash
+# 全局安装 CLI
+npm install -g @kunpengbot/kpbot
+
+# 安装 skills 到目标工具
+kpbot install global opencode      # 全局安装到 OpenCode
+kpbot install project claude       # 项目级安装到 Claude Code
+kpbot install project opencode /path/to/project  # 指定路径
+```
+
+安装后验证：
+```bash
+npm ls -g @kunpengbot/kpbot         # 确认版本
+opencode debug skill | grep optimize  # 确认 skills 注册（OpenCode）
+```
+
+卸载：
+```bash
+kpbot uninstall global opencode
+```
+
+### 方式二：git clone（开发者，获取最新 HEAD）
+
+KPBot 提供统一的安装脚本 `install.sh`，同时支持 Claude Code 和 OpenCode。
+
+### 前置条件
+
+```bash
+git clone https://atomgit.com/openEuler/KPBot.git
+# 已 clone 的仓库：cd KPBot && git pull
+```
+
+### 用法
+
+```bash
+install.sh [level] [tool] [install_path]
+```
+
+| 参数 | 可选值 | 默认值 | 说明 |
+|------|--------|--------|------|
+| `level` | `project` / `global` | `project` | 安装级别：项目级或全局级 |
+| `tool` | `claude` / `opencode` | `claude` | 目标 AI 编码工具 |
+| `install_path` | 任意路径 | 当前目录 | 项目级安装的目标路径 |
+
+### 安装示例
+
+```bash
+# 项目级安装（Claude Code，当前目录）
+/path/to/KPBot/install.sh
+
+# 项目级安装（OpenCode，指定路径）
+cd /path/to/your-c-project
+/path/to/KPBot/install.sh project opencode
+
+# 全局安装（Claude Code）
+/path/to/KPBot/install.sh global claude
+
+# 全局安装（OpenCode）
+/path/to/KPBot/install.sh global opencode
+```
+
+### 安装路径
+
+| 工具 | 项目级 | 全局 |
+|------|--------|------|
+| Claude Code | `.claude/skills/` + `CLAUDE.md` | `~/.claude/skills/` + `~/.claude/CLAUDE.md` |
+| OpenCode | `.opencode/skills/` + `AGENTS.md` | `~/.config/opencode/skills/` + `AGENTS.md` |
+
+### 安装脚本自动完成
+
+1. **Skills 拷贝** — 将插件技能拷贝到目标工具的 skills 目录
+    - Claude Code：拷贝各插件的 skills（claude 格式）；其中 code-optimizer 包含 72 个技能
+    - OpenCode：先拷贝 skills 作基底，再用 `opencode/` 覆盖层替换工具差异文件，并按各插件 `opencode.exclude` 过滤；code-optimizer 跳过 2 个 claude-only skill，安装 70 个技能
+2. **配置文件** — 当仓库根目录存在 `CLAUDE.md` 时生成 `CLAUDE.md`（Claude Code）或 `AGENTS.md`（OpenCode）；不存在则跳过
+3. **冲突处理** — 已有文件时支持覆盖/合并/跳过（全局模式交互选择）
+4. **健康检查** — 验证安装完整性并生成 `kpbot-manifest.json`
+
+### 验证安装
+
+```bash
+# OpenCode
+opencode debug skill | grep optimize   # 确认 skills 已注册
+
+# Claude Code
+# 启动 claude 后，skills 会根据上下文自动激活
+```
+
+### 平台过滤回归测试
+
+```bash
+bash tests/test_install_platform.sh
+```
+
+该测试在临时目录分别执行 `install.sh project claude` 和 `install.sh project opencode`，验证：
+
+- OpenCode 模式不安装 `opencode.exclude` 声明的 claude-only skill
+
+---
+
+## 🚀 使用指南
+
+### 快速上手：一句话优化
+
+安装后直接在 Claude Code 或 OpenCode 中用自然语言描述你的优化需求：
+
+```
+帮我优化 matrix_multiply 函数，目标平台是 Kunpeng-0xd01
+```
+
+```
+分析这个热点函数的性能瓶颈，给出优化建议
+```
+
+```
+用 NEON 指令向量化这个循环
+```
+
+### 主要入口
+
+| 场景 | 告诉 AI | 底层技能 |
+|------|---------|---------|
+| 完整优化流程 | "帮我优化这个项目的性能" | `kpbot-code-optimizer` |
+| 逐函数交互优化 | "逐函数分析并优化这个模块" | `interactive-optimizer` |
+| 查 ARM 指令 | "查询 vaddq_f32 的用法" | `arm-instructions-query` |
+| SPE 采样分析 | "用 ARM SPE 分析缓存 miss" | `arm-spe-analysis` |
+
+### 优化 Pipeline 流程
+
+完整优化 Pipeline 分 6 个阶段自动执行：
+
+```
+准备阶段          分析阶段          决策阶段          执行阶段          验证阶段          审查阶段
+┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
+│ gather-     │  │ analyze-    │  │ decide-     │  │ apply-      │  │ verify-     │  │ adversarial │
+│ context     │→ │ hotspot     │→ │ optimization│→ │ optimization│→ │ optimization│→ │ review      │
+│ parse-intent│  │ analyze-    │  │             │  │ (向量化/    │  │ (编译/测试/ │  │ (挑战所有   │
+│ prepare-    │  │ caller      │  │             │  │  循环展开/  │  │  性能对比)  │  │  声明)      │
+│ project     │  │             │  │             │  │  预取/...)  │  │             │  │             │
+└─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘
+```
+
+每个阶段对应一个独立的 skill，由 LLM 按序调用。
+
+### 可用技能列表
+
+code-optimizer 在 Claude Code 中安装 **72 个** skill，在 OpenCode 中安装 **70 个**（跳过 2 个 claude-only）。
+
+<details>
+<summary>点击展开完整列表</summary>
+
+**分析类**
+- `analyze-hotspot` — 热点函数动态+静态分析
+- `analyze-architecture` — 代码仓库架构分析
+- `analyze-caller-context` — 调用上下文 14 维度分析
+- `analyze-testcase` — 测试用例性能画像分析
+- `arm-spe-analysis` — ARM SPE 采样分析
+- `register-pressure-analysis` — 寄存器压力诊断
+
+**优化类**
+- `apply-vectorization` — NEON/SVE/SME 向量化
+- `apply-optimization` — 优化策略路由执行
+- `apply-generic-optimization` — 通用优化（兜底）
+- `asm-optimization` — 汇编级优化（LDP/STP/后索引等）
+- `loop-unrolling` — 循环展开
+- `branch-elimination` — 分支消除
+- `operation-fusion` — 操作融合
+- `prefetch-optimization` — 软件预取
+- `memory-access-optimization` — 访存模式优化（AoS→SoA 等）
+- `scalar-vector-hybrid` — 标量/矢量混合决策
+- `source-transform-autovec` — 源码变形辅助自动向量化
+- `precision-transform` — 精度变换
+- `special-case-optimization` — 特例快路径
+- `compiler-flag-tuning` — 编译选项调优
+- `hashmap-optimization` — 哈希表四阶段优化流程（链路识别→瓶颈建模→仿真测试→杠杆实施）
+- `openzl-compression-tuning` — OpenZL 压缩内核调优（熵 codec 根表/位流优化、熵选型、归因方法论与负结果档案）
+- `openzl-bench-protocol` — OpenZL unitBench 基准协议（场景注册、KV 数据准备、多机部署复测、topdown 采集，含 3 个脚本）
+
+**Pipeline/编排类**
+- `kpbot-code-optimizer` — 完整优化 Pipeline（Subagent 编排）
+- `kpbot-code-optimizer-workflow` — 完整 Pipeline（Workflow 工具版）
+- `interactive-optimizer` — 交互式逐函数优化
+- `gather-context` — 上下文收集
+- `parse-intent` — 意图解析
+- `prepare-project` — 项目准备与基线建立
+- `decompose-tasks` — 任务分解与排序
+- `decide-optimization` — 优化策略门控
+- `drive-claude-optimize-pipeline` — 驱动 Claude 执行 Pipeline _(claude-only)_
+- `batch-drive-optimize-pipeline` — 批量自动化评估 _(claude-only)_
+
+**平台知识**
+- `kunpeng_microarch` — Kunpeng-0xd01/0xd03/0xd06 微架构知识库（含目标平台 ISA 能力矩阵，供向量化选型判断 SVE/SME/DotProd/BF16 等是否可用）
+- `arm-instructions-query` — ARM 指令集查询（1527+ 条）
+
+**质量保障**
+- `verify-optimization` — 编译+测试+性能验证
+- `adversarial-review` — 对抗性审核
+- `fix-code` — 编译/测试错误修复
+- `evolve-skill` — 技能持续进化
+
+</details>
+
+### 常用操作示例
+
+#### 1. 完整 Pipeline 优化
+
+```
+> 帮我用 kpbot-code-optimizer 优化 src/math/matrix.c 中的 matmul 函数，
+  测试用例是 tests/test_matmul，目标平台 Kunpeng-0xd01
+```
+
+Pipeline 会自动执行：项目准备 → 性能基线 → 热点分析 → 策略决策 → 代码优化 → 验证 → 审查。
+
+#### 2. 查询 ARM 指令
+
+```
+> vmlaq_f32 和 vfmaq_f32 有什么区别？哪个在 Kunpeng-0xd01 上更快？
+```
+
+#### 3. 热点函数分析
+
+```
+> 用 perf record 采样 ./my_app，找到 CPU 热点函数和调用链
+```
+
+#### 4. 向量化一个循环
+
+```
+> 用 NEON intrinsics 向量化下面这个求和循环：
+  for (int i = 0; i < n; i++) sum += a[i] * b[i];
+```
+
+#### 5. 微架构分析
+
+```
+> 用 perf stat 分析 ./my_app 的 IPC、缓存 miss 和分支预测失败
+```
+
+---
+
+## 🔌 插件机制
+
+KPBot 采用插件化架构，每个插件独立封装，通过 marketplace 统一管理。
+
+### 架构概览
+
+```
+marketplace.json          ← 顶层 marketplace 索引（Claude Code）
+  ├── code-optimizer      ← 插件（plugin.json + skills/）
+  └── app-tuner           ← 插件（plugin.json + skills/）
+```
+
+- **Marketplace**（`.claude-plugin/marketplace.json`）：顶层插件索引，声明所有可用插件及其元信息
+- **Plugin**（`Plugins/<name>/.claude-plugin/plugin.json`）：单个插件的清单文件，定义名称、版本、描述、关键词等
+- **Skills**（`Plugins/<name>/skills/`）：插件的技能目录，每个技能包含一个 `SKILL.md`
+
+### Claude Code Marketplace
+
+```bash
+# 安装整个 marketplace
+claude plugins marketplace add https://atomgit.com/openEuler/KPBot.git
+
+# 安装单个插件
+claude plugins install code-optimizer --marketplace kpbot-marketplace
+```
+
+---
+
+## 🗑️ 卸载
+
+### OpenCode
+
+```bash
+# 项目级：删除 skills 目录和配置文件
+rm -rf .opencode/skills/
+rm -f AGENTS.md
+
+# 全局级
+rm -rf ~/.config/opencode/skills/
+rm -f ~/.config/opencode/AGENTS.md
+```
+
+### Claude Code
+
+```bash
+claude plugins uninstall code-optimizer
+claude plugins marketplace remove kpbot-marketplace
+```
+
+---
+
+## ❓ 常见问题
+
+### Q: 安装后技能没有被发现？
+
+```bash
+opencode debug skill | grep optimize
+```
+
+### Q: 全局安装后路径不对？
+
+全局安装时 `install.sh` 会自动将相对路径重写为绝对路径。如果 KPBot 仓库移动了位置，需要重新安装：
+
+```bash
+/path/to/KPBot/install.sh global claude
+# 或
+/path/to/KPBot/install.sh global opencode
+```
+
+### Q: 安装时已有配置文件被覆盖？
+
+`install.sh` 在覆盖前会自动备份原文件（`*.bak.<timestamp>`）。全局模式下还支持交互选择：
+- **[O] 覆盖** — 用插件内容替换（原内容已备份）
+- **[M] 合并** — 插件内容置顶，保留原自定义内容
+- **[S] 跳过** — 保持现有文件不变
+
+### Q: 如何更新到最新版本？
+
+重新运行安装脚本即可（会覆盖旧文件并保留备份）：
+
+```bash
+cd /path/to/KPBot && git pull
+/path/to/KPBot/install.sh
+```
+
+---
+
+## 📂 目录结构
+
+```
+KPBot/
+├── .claude-plugin/
+│   └── marketplace.json           # Claude Code Marketplace 索引
+├── Plugins/
+│   ├── code-optimizer/            # 代码优化插件 (72 skills)
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json        #   插件清单
+│   │   ├── skills/                #   技能源目录（claude 格式，单一源）
+│   │   └── opencode/              #   OpenCode 覆盖层（26 个差异文件，稀疏镜像 skills/ 结构）
+│   └── app-tuner/                 # 应用级调优插件
+│       ├── .claude-plugin/
+│       │   └── plugin.json
+│       └── skills/                #   技能源目录
+├── install.sh                     # 统一安装脚本（Claude Code + OpenCode）
+├── README.md
+└── LICENSE
+```
+
+## 🛠️ 添加新插件
+
+1. 在 `Plugins/` 下创建新目录
+2. 添加 `.claude-plugin/plugin.json`（插件清单，含 name、version、description、author 等）
+3. 在 `skills/` 下创建技能目录（每个技能一个 `SKILL.md`）
+4. 在 `.claude-plugin/marketplace.json` 的 `plugins` 数组中添加条目
+5. 提交 PR
+
+## 📄 License
+
+KPBot 采用 [木兰宽松许可证，第2版（Mulan PSL v2）](http://license.coscl.org.cn/MulanPSL2) 开源许可证。
+
+详见 [LICENSE](LICENSE) 文件。

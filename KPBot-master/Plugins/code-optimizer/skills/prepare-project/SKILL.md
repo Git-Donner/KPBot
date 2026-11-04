@@ -1,0 +1,413 @@
+---
+name: prepare-project
+description: 验证项目状态、定位优化目标函数、建立性能基线。适用于用户请求优化某个项目/模块时，作为流水线第一步。
+---
+
+# 准备项目
+
+你是一位鲲鹏性能优化流水线的项目准备专家。你的任务是验证目标项目状态、定位优化目标、建立性能基线。
+
+用户调用了 `/prepare-project`，参数为：`$ARGUMENTS`
+
+## 输入
+
+从 `$ARGUMENTS` 解析以下信息：
+
+| 参数 | 必需 | 说明 |
+|------|------|------|
+| project_path | 是 | 项目根目录绝对路径 |
+| target | 否 | 目标模块名或函数名，不提供则全项目扫描 |
+| target_machine | 否 | 任务要求的目标机器身份；未提供时只记录当前可观察机器，不把开发机假定为验收目标 |
+| verification_commands | 否 | 用户指定的构建、正确性和性能验证命令 |
+| numeric_constraints | 否 | 用户指定的正确性容差、性能目标、资源上限等数值约束 |
+| diagnostic_budget | 否 | 诊断实验预算；默认 `{max_experiments: 3, command_timeout_seconds: 600}` |
+
+从任务目标和已有上下文提取这些可选参数。只有任务目标明确给出覆盖值时才改变默认诊断预算；不要为了补齐流程而要求用户提供所有可选信息。
+
+## 执行步骤
+
+### 任务初始化
+
+创建本阶段子任务，追踪内部执行进度。执行以下 TaskCreate 并捕获每个返回的 task ID：
+
+- validate_task_id = TaskCreate({ subject: "    └ 验证项目", description: "检查项目路径、构建系统和源文件" })
+- compile_task_id = TaskCreate({ subject: "    └ 提取编译参数", description: "提取编译器选项、架构标志和性能flags" })
+- machine_task_id = TaskCreate({ subject: "    └ 收集机器信息", description: "收集CPU架构、ISA特性、缓存层次等" })
+- locate_task_id = TaskCreate({ subject: "    └ 定位目标", description: "定位优化目标函数/模块的源文件" })
+- baseline_task_id = TaskCreate({ subject: "    └ 建立基线", description: "建立编译、测试和性能基线" })
+- arch_task_id = TaskCreate({ subject: "    └ 架构分析", description: "分析仓库架构，生成ARCHITECTURE.md" })
+
+### 步骤 1：验证项目
+
+TaskUpdate({ taskId: validate_task_id, status: "in_progress" })
+
+用 Bash 工具执行以下检查，逐项记录结果：
+
+1. **路径检查**：`test -d <project_path>` 确认目录存在
+2. **VCS 检查**：`git -C <project_path> rev-parse --is-inside-work-tree` 确认是 Git 仓库（兼容 `.git` 为文件的 worktree）
+3. **Git 与实际源码状态**：未提交变更可以作为父状态继续准备；在构建、生成报告或任何源码修改前完成以下记录，输出到 `repo.source_state`：
+   - 读取 `git -C <project_path> rev-parse HEAD` 和 `git -C <project_path> status --porcelain=v1 -z --untracked-files=all`，保留原始状态。分别保存 `git diff --cached --binary --full-index` 的 staged patch、`git diff --binary --full-index` 的 unstaged patch，以及 `git ls-files --others --exclude-standard -z` 的 untracked 清单与相关文件内容；这些命令均在项目目录执行，不改变索引或工作区。
+   - 确认参与构建/测试的源码、头文件、构建配置与输入清单，保存路径、文件类型/模式和内容摘要及可还原快照；相关 untracked 文件必须包含，参与构建的 ignored 输入也要显式纳入。`digest` 标识 HEAD、相关 index 状态和实际工作区内容，不能只记 HEAD。新写的运行报告、日志及非输入构建产物不纳入源码摘要，避免把报告写入误判为父源码变化。
+   - 快照保存在源码清单之外的独立目录，确认后续能从该快照建立独立候选目录；构建或测试若会改变父源码/用户文件，先在独立副本执行并记录实际路径。保持原工作区和索引中的用户内容，不自动 commit、stash、checkout 或清理文件。
+   - 只有无法可靠识别实际源码、保存完整快照或证明隔离安全时才因源码状态返回 `status: "blocked"`，记录具体原因。已识别且能安全隔离的 dirty 父状态可以为 `ready`；将快照引用交给协调者，在候选创建前重新核对并据此建立 `parent_state`。
+4. **构建系统**：检查以下文件是否存在（按优先级）：
+   - `CMakeLists.txt` → cmake
+   - `Makefile` 或 `makefile` → make
+   - `meson.build` → meson
+   - `BUILD` 或 `WORKSPACE` → bazel
+   - `configure` → autotools
+   - 都不存在 → unknown
+5. **编译器**：`which gcc && gcc --version | head -1` 或 `which clang && clang --version | head -1`
+6. **测试框架**：在源码中 Grep 以下模式：
+   - `#include <gtest/gtest.h>` → googletest
+   - `#include <catch2/catch_test_macros.hpp>` → catch2
+   - `#include <unity.h>` → unity
+   - `TEST(` 或 `TEST_F(` → googletest
+   - 都未找到 → none
+
+### 步骤 2：提取编译参数
+
+TaskUpdate({ taskId: validate_task_id, status: "completed" })
+TaskUpdate({ taskId: compile_task_id, status: "in_progress" })
+
+根据步骤 1 检测到的构建系统，读取构建配置文件提取当前编译参数。
+
+1. **CMake 项目**：
+   - 用 Read 工具读取项目根目录及子目录的 `CMakeLists.txt`，提取以下变量：
+     - `CMAKE_C_FLAGS`、`CMAKE_CXX_FLAGS`
+     - `CMAKE_BUILD_TYPE`（Release/Debug/RelWithDebInfo/MinSizeRel）
+     - `CMAKE_EXE_LINKER_FLAGS`
+   - 用 Glob 查找 `toolchain.cmake` 或 `*.cmake` 中的编译选项
+   - 若 `<project_path>/build/CMakeCache.txt` 存在，用 Bash 提取实际生效的 flags：
+     ```bash
+     grep -E "CMAKE_C_FLAGS:|CMAKE_CXX_FLAGS:|CMAKE_BUILD_TYPE:|CMAKE_EXE_LINKER_FLAGS:" <project_path>/build/CMakeCache.txt
+     ```
+   - 若 `<project_path>/build/compile_commands.json` 存在，用 Bash 提取实际编译命令中的 flags：
+     ```bash
+     cat <project_path>/build/compile_commands.json | python3 -c "import json,sys; cmds=json.load(sys.stdin); flags=set(); [flags.update(a for a in c['command'].split() if a.startswith('-') and not a.startswith('-I')) for c in cmds]; print(' '.join(sorted(flags)))" 2>/dev/null || echo "parse_failed"
+     ```
+
+2. **Makefile 项目**：
+   - 用 Read 工具读取 `Makefile`（及 `Makefile.inc`、`common.mk` 等），提取：
+     - `CFLAGS`、`CXXFLAGS`、`LDFLAGS`
+     - `AM_CFLAGS`、`AM_CXXFLAGS`（autotools 生成的 Makefile）
+   - 若构建目录干净，可用 Bash dry-run 提取：
+     ```bash
+     cd <project_path> && make -n 2>&1 | grep -E "gcc|g\+\+" | head -5
+     ```
+
+3. **Autotools 项目**：
+   - 用 Read 工具读取 `configure.ac` 或 `configure.in`，提取 `AC_PROG_CC`/`AC_PROG_CXX` 相关 flags
+   - 用 Read 工具读取 `Makefile.am`，提取 `AM_CFLAGS`、`AM_CXXFLAGS`、`AM_LDFLAGS`
+   - 若 `config.log` 存在，用 Bash 提取实际使用的 flags：
+     ```bash
+     grep -E "^CFLAGS=|^CXXFLAGS=|^LDFLAGS=" <project_path>/config.log
+     ```
+
+4. **Meson 项目**：
+   - 用 Read 工具读取 `meson.build`，提取：
+     - `c_args`、`cpp_args`、`buildtype` 选项
+     - `default_options` 中的编译选项
+
+5. **Bazel 项目**：
+   - 用 Read 工具读取 `WORKSPACE` 和 `BUILD` 文件，提取 `copts`、`linkopts`
+   - 检查 `.bazelrc` 中的编译选项
+
+6. **性能相关标志分类**：从提取的所有 flags 中识别并分类：
+   - **优化级别**：匹配 `-O0`/`-O1`/`-O2`/`-O3`/`-Os`，未找到则标记 `unknown`
+   - **架构标志**：匹配 `-march=`、`-mcpu=`、`-mtune=`
+   - **数学标志**：匹配 `-ffast-math`、`-funsafe-math-optimizations`、`-fno-math-errno`、`-ffinite-math-only`
+   - **LTO**：匹配 `-flto`，标记 `lto_enabled: true/false`
+   - **PGO**：匹配 `-fprofile-generate`、`-fprofile-use`，标记 `pgo_enabled: true/false`
+   - **自动向量化**：`-O3` 或 `-ftree-vectorize` 存在时标记 `enabled`，`-fno-tree-vectorize` 存在时标记 `disabled`，否则 `unknown`
+
+7. **编译参数提取失败时**：不影响 `status`，`compilation` 中对应字段记为 `null`，`performance_flags.optimization_level` 记为 `unknown`
+
+8. **二进制体积检测**（当 `build_ok == true` 时，辅助下游判断 O3 代码膨胀程度）：
+   ```bash
+   # 检查构建产物的 .text 段大小
+   size <project_path>/build/lib*.so 2>/dev/null | grep -E "text|data|bss" | head -5
+   # 或使用 objdump 获取精确 .text 段大小
+   objdump -h <project_path>/build/lib*.so 2>/dev/null | grep .text | head -5
+   ```
+   记录到 `compilation.binary_size`：
+   - `text_bytes`：.text 段大小（字节），用于判断 O3 代码膨胀程度（> 1MB 时 O3→O2 降级收益可能较大）
+   - `total_bytes`：二进制总大小
+   - `stripped`：是否已 strip（`file <binary> | grep "not stripped"` 为空 → 已 strip）
+
+### 步骤 3：收集机器信息
+
+TaskUpdate({ taskId: compile_task_id, status: "completed" })
+TaskUpdate({ taskId: machine_task_id, status: "in_progress" })
+
+收集当前机器的硬件和系统信息，用于判断优化策略与当前平台是否匹配。
+
+用 Bash 工具执行以下命令，逐项记录结果：
+
+1. **架构类型**：
+   ```bash
+   uname -m
+   ```
+   输出示例：`aarch64`、`x86_64`
+
+2. **CPU 型号**：
+   ```bash
+   # ARM: /proc/cpuinfo 中 "Processor" 字段
+   grep "Processor" /proc/cpuinfo | head -1 | cut -d: -f2 | sed 's/^ //'
+   # x86: /proc/cpuinfo 中 "model name" 字段
+   grep "model name" /proc/cpuinfo | head -1 | cut -d: -f2 | sed 's/^ //'
+   # 通用降级
+   lscpu | grep "Model name" | head -1 | awk -F: '{print $2}'
+   ```
+
+3. **操作系统与内核**：
+   ```bash
+   uname -s -r          # 如 "Linux 5.14.0-284.11.1.el9_2.aarch64"
+   cat /etc/os-release 2>/dev/null | head -5
+   ```
+
+4. **ISA 特性检测**（判断支持的 SIMD 指令集）：
+   ```bash
+   # aarch64：读取 Features 行
+   grep "Features" /proc/cpuinfo | head -1
+   # x86_64：读取 flags 行
+   grep "flags" /proc/cpuinfo | head -1
+   # 编译器预定义宏补充检测
+   echo "" | gcc -dM -E - 2>/dev/null | grep -E "__ARM_ARCH|__ARM_FEATURE|__AVX|__SSE|__MMX" || echo "compiler_macros_unavailable"
+   ```
+
+5. **缓存信息**：
+   ```bash
+   lscpu | grep -iE "cache|cluster|socket|core|thread" 2>/dev/null
+   # 或使用 getconf
+   getconf LEVEL1_DCACHE_LINESIZE 2>/dev/null
+   getconf LEVEL1_DCACHE_SIZE 2>/dev/null
+   getconf LEVEL2_CACHE_SIZE 2>/dev/null
+   getconf LEVEL3_CACHE_SIZE 2>/dev/null
+   ```
+
+6. **Kunpeng 特定检测**（判断是否为鲲鹏平台及具体型号）：
+   ```bash
+   grep "CPU implementer" /proc/cpuinfo | head -1
+   # 0x48 = Huawei (HiSilicon), 0x41 = ARM Ltd
+   grep "CPU part" /proc/cpuinfo | head -1
+   # 0xd01 = Kunpeng-0xd01 (TaiShan v110)
+   # 0xd03 = Kunpeng-0xd03
+   # 0xd06 = Kunpeng-0xd06
+   ```
+
+   **鲲鹏型号→微架构文档映射**（Part ID 严格匹配，不依赖 dmidecode Version 字符串（各型号显示相同，无法区分变体））：
+
+   | CPU Part | 芯片型号 | 微架构文档 |
+   |----------|---------|-----------|
+   | 0xd01 | Kunpeng-0xd01 (TaiShan v110) | `skills/kunpeng_microarch/kunpeng920-microarchitecture.md` |
+   | 0xd03 | Kunpeng-0xd03 | `skills/kunpeng_microarch/kunpeng_uarch_b-microarchitecture.md` |
+   | 0xd06 | Kunpeng-0xd06 | `skills/kunpeng_microarch/kunpeng950-microarchitecture.md` |
+
+   若 Part ID 不在上表中 → 鲲鹏型号未知，`microarch_file` 记为 `null`，不依赖微架构特定参数，使用通用 ARM 优化策略。
+
+7. **检测结果汇总与平台匹配检查**：
+   - 若 `arch == "aarch64"` 且检测到鲲鹏 CPU → 标记 `platform_match = true`，所有 ARM/Kunpeng 优化策略可用
+   - 若 `arch == "aarch64"` 但非鲲鹏 → 标记 `platform_match = false`，但 ARM NEON/SVE 优化仍可用（标为 `partial_match`）
+   - 若 `arch != "aarch64"` → 标记 `platform_match = false`，输出警告：**当前机器为 `$arch`，不是 ARM aarch64 架构。ARM NEON/SVE/SME 向量化优化和鲲鹏专有编译选项（`-mcpu=tsv110` 等）无法在当前机器上验证。优化后需在 ARM 鲲鹏机器上重新验证。**
+   - 该警告信息需在输出的 `warnings` 字段中记录
+
+8. **微架构文档路径**：根据 Part ID 查表，将对应文档的绝对路径（`<pipeline_root>/skills/kunpeng_microarch/<file>.md`）填入输出的 `microarch_file` 字段。查不到则 `null`。
+
+9. **指令性能数据**：若 Part ID 匹配且有对应数据文件，将路径填入 `instruction_perf_file`：
+   - `0xd01` (Kunpeng-0xd01) → `<pipeline_root>/skills/kunpeng_microarch/scripts/tsv110_full.json`（207 条指令模式，可用 `python3 query_tsv110.py <指令名>` 查询）
+   - `0xd03` (Kunpeng-0xd03) → `<pipeline_root>/skills/kunpeng_microarch/scripts/[REDACTED]_full.json`（29 张表、754 条助记符，可用 `python3 query_uarch_b.py <指令名>` 查询）
+   - `0xd06` (Kunpeng-0xd06) → 同上 `[REDACTED]_full.json`（0xd06 复用 0xd03 指令性能数据）
+   - 其他型号暂无数据 → `null`
+   - 下游可查询单条指令的延迟、吞吐量、端口压力
+
+### 步骤 4：定位目标
+
+TaskUpdate({ taskId: machine_task_id, status: "completed" })
+TaskUpdate({ taskId: locate_task_id, status: "in_progress" })
+
+1. 如果用户提供了 `target`（模块名或函数名）：
+   - 用 Grep 在项目源码中搜索 `target` 的定义位置（函数定义、结构体定义等）
+   - 用 Glob 找到目标模块的源文件（文件名包含 target 的 `.c`/`.cpp`/`.h`/`.s`/`.S` 文件）
+   - 用 LSP `findReferences` 或 Grep 找到调用链
+   - 用 Grep 搜索与目标相关的测试文件
+2. 如果用户未提供 `target`：
+   - 用 Glob 列出项目中所有 `.c`/`.cpp`/`.s`/`.S` 源文件
+   - 用 Grep 搜索计算密集型模式（嵌套 `for` 循环、矩阵运算等）
+   - 将发现的候选函数全部列入 `entry_functions`
+
+### 步骤 5：建立基线
+
+TaskUpdate({ taskId: locate_task_id, status: "completed" })
+TaskUpdate({ taskId: baseline_task_id, status: "in_progress" })
+
+1. **构建项目**：
+   - cmake 项目：`mkdir -p build && cd build && cmake .. && make -j$(nproc)`
+   - make 项目：`make -j$(nproc)`
+   - 记录构建结果 `build_ok: true/false`
+   - 构建失败时记录错误但不停止
+
+2. **运行测试**（如果 `test_framework != none` 且 `build_ok == true`）：
+   - cmake + googletest：`cd build && ctest --output-on-failure`
+   - make + googletest：`./test_runner`
+   - 记录 `tests_pass: true/false`
+   - 测试框架不可用时记录 `tests_pass: null`
+
+3. **性能基线**（仅当 `build_ok == true` 且 `target_machine.available == true`，并确认当前执行机器与目标身份匹配）：
+   - 检查项目是否有 benchmark 脚本或目标（Grep `benchmark`、`perf`、`--bench`）
+   - 如果有，运行 benchmark 并记录指标
+   - 如果没有，对目标函数所在可执行文件用 `time` / `perf stat` 获取粗略指标
+   - 无法获取时记录 `metrics: null`
+   - 目标机器不可用、身份未知或当前机器不匹配时，不运行 benchmark、`time` 或 `perf stat`；记录 `metrics: null` 和目标证据缺口，不把开发机数据写入基线
+
+4. **验收条件与命令**：
+   - 优先保留用户明确指定的构建、正确性和性能命令，不自行改写其语义
+   - 从项目配置识别到的命令可作为候选，但必须标明来源；未确认可执行时不要声称已验证
+   - 提取正确性容差、性能目标、数据规模、并发度和资源上限等数值约束；未提供的字段保留为空数组
+   - 记录任务要求的目标机器身份。无法确认目标机器时，后续只做静态分析，不在当前开发机用替代性能结果宣告成功
+
+### 步骤 6：架构分析
+
+TaskUpdate({ taskId: baseline_task_id, status: "completed" })
+TaskUpdate({ taskId: arch_task_id, status: "in_progress" })
+
+调用 `analyze-architecture` skill 生成仓库架构文档：
+
+1. 使用 Skill tool，skill 名称为 `analyze-architecture`，参数：`{"project_path": "<project_path>"}`
+2. 从返回 JSON 中提取 `file` 字段，即为 ARCHITECTURE.md 的绝对路径
+3. 若 `success == true`，将路径填入输出的 `architecture_file` 字段
+4. 若 `success == false`，记录 `architecture_file: null` 和错误原因到 warnings
+
+TaskUpdate({ taskId: arch_task_id, status: "completed" })
+
+## 输出
+
+完成后，输出以下 JSON 契约（不要输出其他内容）：
+
+```json
+{
+  "repo": {
+    "path": "<project_path>",
+    "vcs": "git|none",
+    "source_state": {
+      "head": "<Git HEAD>",
+      "dirty": true,
+      "manifest": "<相关源码/构建输入清单与内容摘要路径>",
+      "digest": "<HEAD、相关 index 与工作区内容摘要>",
+      "snapshot_path": "<可还原父源码快照的独立目录>",
+      "staged_patch": "<staged binary patch 路径，无变更时 null>",
+      "unstaged_patch": "<unstaged binary patch 路径，无变更时 null>",
+      "untracked_manifest": "<相关 untracked 文件与内容摘要清单路径，无变更时 null>",
+      "isolation_safe": true
+    },
+    "build_system": "cmake|make|meson|bazel|autotools|unknown",
+    "compiler": "<compiler version or null>",
+    "test_framework": "googletest|catch2|unity|none",
+    "compilation": {
+      "cflags": "<CFLAGS value or null>",
+      "cxxflags": "<CXXFLAGS value or null>",
+      "ldflags": "<LDFLAGS value or null>",
+      "build_type": "Release|Debug|RelWithDebInfo|MinSizeRel|unknown",
+      "flag_sources": [
+        {
+          "file": "CMakeLists.txt",
+          "variable": "CMAKE_C_FLAGS",
+          "value": "-O2 -g"
+        }
+      ],
+      "performance_flags": {
+        "optimization_level": "-O0|-O1|-O2|-O3|-Os|unknown",
+        "arch_flags": ["-march=armv8-a"],
+        "cpu_flags": ["-mcpu=tsv110"],
+        "math_flags": [],
+        "lto_enabled": false,
+        "pgo_enabled": false,
+        "auto_vectorization": "enabled|disabled|unknown"
+      },
+      "binary_size": {
+        "text_bytes": 2097152,
+        "total_bytes": 5242880,
+        "stripped": false
+      }
+    }
+  },
+  "machine": {
+    "arch": "aarch64|x86_64|unknown",
+    "cpu_model": "<CPU model name>",
+    "cpu_implementer": "0x48",
+    "cpu_part": "0xd01|0xd03|0xd06|null",
+    "isa_features": {
+      "simd": ["neon", "sve", "avx2", "avx512f", "sse4_2"],
+      "architecture_extensions": ["crc32", "crypto", "dotprod"]
+    },
+    "cache_info": {
+      "l1d_size_kb": 64,
+      "l1i_size_kb": 64,
+      "l2_size_kb": 512,
+      "l3_size_kb": 32768,
+      "cache_line_size": 64
+    },
+    "os": "Linux 5.14.0-284.11.1.el9_2.aarch64",
+    "platform_match": "true|false|partial_match",
+    "platform_note": "当前机器为 x86_64 架构，非 ARM aarch64。ARM NEON/SVE/SME 向量化优化和鲲鹏专有编译选项无法在当前机器上验证。优化后需在 ARM 鲲鹏机器上重新验证。"
+  },
+  "target": {
+    "module": "<module name or null>",
+    "source_files": ["<file1>", "<file2>"],
+    "entry_functions": ["<func1>", "<func2>"],
+    "call_chains": {
+      "<func1>": ["<sub_func1>", "<sub_func2>"]
+    }
+  },
+  "baseline": {
+    "build_ok": true,
+    "tests_pass": true,
+    "metrics": {
+      "<func1>_avg_ns": 125000
+    }
+  },
+  "target_machine": {
+    "identity": "<任务要求的机器、型号或 unknown>",
+    "available": true,
+    "source": "task_requirement|observed|unknown"
+  },
+  "verification_commands": {
+    "build": [{ "command": "<argv or shell command>", "source": "user|project" }],
+    "correctness": [{ "command": "<argv or shell command>", "source": "user|project" }],
+    "performance": [{ "command": "<argv or shell command>", "source": "user|project" }]
+  },
+  "numeric_constraints": [
+    { "name": "<constraint name>", "operator": "<=|>=|==", "value": 0.001, "unit": "<unit>", "source": "user|project" }
+  ],
+  "diagnostic_budget": {
+    "max_experiments": 3,
+    "command_timeout_seconds": 600
+  },
+  "architecture_file": "<project_path>/optimization_reports/architecture/ARCHITECTURE.md",
+  "microarch_file": "<pipeline_root>/skills/kunpeng_microarch/kunpeng920-microarchitecture.md 或 null>",
+  "instruction_perf_file": "<pipeline_root>/skills/kunpeng_microarch/scripts/tsv110_full.json 或 null>",
+  "warnings": [
+    "当前机器为 x86_64，不是 ARM aarch64 架构。部分优化策略（NEON/SVE/SME 向量化、-mcpu=tsv110 等）将无法在当前环境验证。"
+  ],
+  "status": "ready"
+}
+```
+
+`status` 取值：
+- `ready`：项目验证通过，可以进入分析阶段
+- `blocked`：存在阻塞问题（路径无效、无 Git、实际源码状态无法识别或隔离不安全等），需用户处理
+- `partial`：部分检查失败但可继续（如构建失败但能定位目标）
+
+## 规则
+
+- 构建失败时不停止——记录 `build_ok: false` 但继续定位目标
+- 测试框架不可用时跳过测试运行，记录 `tests_pass: null`
+- 基线性能获取不到时记录 `metrics: null`
+- Git staged、unstaged 或 untracked 变更本身不阻塞；保留用户内容并记录 `repo.source_state`，仅无法识别或安全隔离父源码状态时阻塞
+- 目标函数不存在时 `status: "blocked"`，提示用户确认函数名
+- 机器信息收集失败不影响 `status`（仍为 `ready` 或 `blocked`），仅记录 `machine.arch` 为 `unknown`
+- 编译参数提取失败不影响 `status`，`compilation` 中对应字段记为 `null`，`performance_flags.optimization_level` 记为 `unknown`
+- 优先使用实际生效的 flags（CMakeCache.txt / compile_commands.json / config.log）而非仅读取配置文件，因为配置文件中的值可能被命令行参数覆盖
+- 平台不匹配（`machine.platform_match == false`）不会阻塞流水线，但需在 `warnings` 字段中明确提醒用户
+- `diagnostic_budget` 默认每个优化点最多 3 个实验、单命令 600 秒；只接受任务目标中的明确覆盖
+- 未确认目标机器时，`target_machine.available: false`，继续静态分析并保留缺失信息，不要求用户为了流程固定补齐所有字段

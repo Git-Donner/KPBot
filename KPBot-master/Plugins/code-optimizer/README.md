@@ -1,0 +1,229 @@
+# code-optimizer
+
+鲲鹏/ARM 代码优化插件 — 自动化 C/C++ 性能分析与优化 Pipeline。
+
+同时支持 **Claude Code** 和 **OpenCode** 两种 AI 编码工具。
+
+## 概述
+
+code-optimizer 提供 72 个专业技能（skills），覆盖从热点分析到代码优化的完整 Pipeline：
+
+- **性能分析**: 热点分析、火焰图解析、Top-down 分析、SPE 分析、调用上下文分析
+- **优化决策**: 意图解析、任务分解、优化策略决策、架构分析
+- **代码优化**: 向量化、汇编优化、循环展开、分支消除、操作融合、预取优化、访存优化
+- **平台支持**: Kunpeng-0xd01/0xd03/0xd06 微架构深度优化
+- **ARM 指令**: 完整的 ARM 指令集查询（Base/SVE/NEON/SME，共 1527+ 条指令）
+- **质量保障**: 对抗性审查、优化验证、修复代码
+- **Faiss 向量检索**: IVFPQ、FastScan、HNSW、RaBitQ 与 TurboQuant 的 CP0–CP7 优化工作流，配套构建、基线、采样、SIMD 和 UT/ST 验证
+- **TF 推理优化**: TensorFlow 纯 CPU 推理优化（图优化 + 自定义 fused kernel + 多维 profiling）
+
+## 诊断反馈流程
+
+通用优化编排新增 **DesignExperiment（假设与实验设计）** 和 **ValidateExperiment（执行实验与反馈）** 两个模板阶段，沿用现有编排和叶子技能。
+
+```mermaid
+flowchart LR
+    A[热点分析] --> D[DesignExperiment]
+    D --> V[ValidateExperiment]
+    V -->|证据不足| D
+    V -->|假设被反驳| A
+    V -->|证据支持| O[优化决策]
+    O --> R[对抗审查与修改]
+    R --> T[完整验证]
+    T -->|实现错误| F[FixCode]
+    F --> T
+    T -->|性能未达标| V
+    T -->|正确性与系统验收通过| E[交付]
+```
+
+Agent 在目标环境执行实验并保存原始证据；局部性能结果与最终项目验收分开判断。目标不可用时返回 `awaiting_target_evidence`。
+
+| 验收层次 | 当前状态 |
+| --- | --- |
+| 本机逻辑与安装测试 | 已通过：30 个顶层测试、两平台各 28 个安装产物测试、8 项既有安装检查 |
+| 用户真实历史回放 | pending：尚未提供案例；逻辑 fixture 不算历史回放结果 |
+| 鲲鹏实测结果 | pending：尚未提供目标机器及真实实验，尚未完成整体验收 |
+
+复现命令、逐轮揭示证据的方法及真实目标验收清单见 [反馈回放指引](docs/feedback-replay.md)。
+
+## 安装
+
+### OpenCode
+
+```bash
+# 克隆 KPBot 仓库
+git clone https://gitcode.com/KPBot/KPBot.git
+
+# 安装到你的项目
+cd /path/to/your-c-project
+/path/to/KPBot/init.sh project opencode
+
+# 启动
+opencode
+```
+
+安装后 `init.sh` 会自动：
+1. 将适用于 OpenCode 的技能安装到 `.opencode/skills/`
+2. 生成 `AGENTS.md` 系统提示词
+
+验证安装：
+
+```bash
+opencode debug skill | grep optimize   # 确认 skills 已注册
+```
+
+### Claude Code
+
+```bash
+# 安装 marketplace
+claude plugins marketplace add https://gitcode.com/KPBot/KPBot.git
+
+# 或本地安装
+claude plugins install --plugin-dir /path/to/KPBot/Plugins/code-optimizer
+```
+
+安装后，Claude Code 会根据上下文自动激活相关 skills。
+
+## 技能分类
+
+### 分析类 (Analysis)
+| 技能 | 描述 |
+|------|------|
+| `analyze-hotspot` | 热点函数分析 |
+| `analyze-architecture` | 代码架构分析 |
+| `analyze-caller-context` | 调用上下文分析 |
+| `analyze-testcase` | 测试用例分析 |
+| `arm-spe-analysis` | ARM SPE (Statistical Profiling Extension) 分析 |
+| `register-pressure-analysis` | 寄存器压力分析 |
+
+### 优化类 (Optimization)
+| 技能 | 描述 |
+|------|------|
+| `apply-optimization` | 应用优化方案 |
+| `apply-generic-optimization` | 通用优化应用 |
+| `apply-vectorization` | 向量化优化（NEON/SVE） |
+| `asm-optimization` | 汇编级优化 |
+| `branch-elimination` | 分支消除 |
+| `loop-unrolling` | 循环展开 |
+| `operation-fusion` | 操作融合 |
+| `prefetch-optimization` | 预取优化 |
+| `memory-access-optimization` | 访存优化 |
+| `scalar-vector-hybrid` | 标量-向量混合优化 |
+| `source-transform-autovec` | 源码变换辅助自动向量化 |
+| `precision-transform` | 精度变换优化 |
+| `special-case-optimization` | 特例优化 |
+| `compiler-flag-tuning` | 编译选项调优 |
+
+### 推理框架优化 (Inference)
+| 技能 | 描述 |
+|------|------|
+| [`ort-kdnn-attention-opt`](skills/ort-kdnn-attention-opt/SKILL.md) | ONNX Runtime + KDNN 的 Attention/MHA 子图识别、融合内核、框架接入、正确性验证与 A/B 基准 |
+| [`tf-inference-opt`](skills/tf-inference-opt/SKILL.md) | TensorFlow CPU 推理与 Serving 的图优化、算子库接入、线程调度、序列化与构建调优 |
+
+两个技能共用 canonical 内容，Claude Code 和 OpenCode 均通过 `install.sh` 自动安装。
+ORT 技能的模型扫描脚本依赖 Python `onnx` 包；A/B 脚本需已有的 ORT/KDNN benchmark 和模型，
+从目标 ORT 源码根目录运行，或用 `REPO_ROOT` 指定该目录。技能内的源码相对路径指向待优化项目；
+TF 历史报告中的绝对路径仅用于追溯原实验，不是 KPBot 的运行依赖。
+
+这两个技能可独立调用，尚未接入通用代码优化流水线内部的策略路由。
+
+### Faiss 向量检索 (Vector Search)
+
+完整优化使用 [`faiss-optimize`](skills/faiss-optimize/SKILL.md)，由 `kpbot-code-optimizer` 根据库名与源码指纹路由。
+明确的 Faiss 请求优先进入 Faiss 工作流；仅出现 RaBitQ 等共享算法名时，需要区分目标库。
+
+| 技能 | 职责 |
+|------|------|
+| `faiss-optimize` | CP0–CP7 编排、五角色交接与实验状态管理 |
+| `faiss-source-analysis` / `faiss-algorithm-optimization` | 源码取证、算法路由与候选选择 |
+| `faiss-build` / `faiss-benchmark-baseline` / `faiss-perf-profile` | 构建清单、冻结基线与性能采样 |
+| `faiss-simd-optimization` | 根据实际后端与指令路径选择 SIMD 方案 |
+| `faiss-sra-test` | 使用 sra_test 作为可选测试适配器 |
+| `faiss-ivfpq-optimization` / `faiss-ivfpqfs-optimization` | IVFPQ 与 FastScan 的数据布局、热点和验证 |
+| `faiss-hnsw-optimization` / `faiss-rabitq-optimization` / `faiss-turboquant-optimization` | HNSW、RaBitQ 与 TurboQuant 的算法专项指导 |
+| `vector-experiment-methodology` / `vector-ut-st-validation` | 交错性能对照、正确性验证与报告契约 |
+
+安装沿用现有 `install.sh`，同时注册五个 Faiss 角色。运行产物保存在独立目录；算法、版本、数据和资源限制由当前任务决定。
+入门与安装验证见 [Faiss 集成说明](../../docs/faiss-integration.md)。
+
+### Pipeline 类 (Workflow)
+| 技能 | 描述 |
+|------|------|
+| `kpbot-code-optimizer` | 优化 Pipeline 编排 |
+| `kpbot-code-optimizer-workflow` | 优化 Pipeline 工作流 |
+| `drive-claude-optimize-pipeline` | 驱动 Claude 执行优化 Pipeline |
+| `batch-drive-optimize-pipeline` | 批量驱动优化 Pipeline |
+| `interactive-optimizer` | 交互式优化器 |
+| `parse-intent` | 意图解析 |
+| `decompose-tasks` | 任务分解 |
+| `decide-optimization` | 优化策略决策 |
+| `gather-context` | 上下文收集 |
+| `prepare-project` | 项目准备 |
+
+### 平台知识 (Platform)
+| 技能 | 描述 |
+|------|------|
+| `kunpeng_microarch` | Kunpeng-0xd01/0xd03/0xd06 微架构知识库 |
+| `arm-instructions-query` | ARM 指令集查询工具 |
+
+### 质量保障 (Quality)
+| 技能 | 描述 |
+|------|------|
+| `verify-optimization` | 优化验证 |
+| `adversarial-review` | 对抗性审查 |
+| `fix-code` | 代码修复 |
+| `evolve-skill` | 技能演化 |
+
+### TF 推理优化 (TF Inference)
+| 技能 | 描述 |
+|------|------|
+| `tf-inference-optimizer` | TF 推理优化统一工作流（主入口） |
+| `tf-env-verify` | 环境验证 |
+| `tf-profile-collector` | 多维 profiling（静态图/trace/perf） |
+| `tf-graph-optimize` | 图优化（remapper/rewriter） |
+| `tf-kernel-optimize` | 自定义 fused kernel |
+| `tf-result-verify` | 结果验证与归因 |
+| `tf-benchmark` | 端到端基准测试 |
+
+## 使用方式
+
+### 在 OpenCode 中
+
+安装后直接在 OpenCode 中用自然语言描述优化需求：
+
+```
+> 帮我优化 src/math/matrix.c 中的 matmul 函数，目标平台 Kunpeng-0xd01
+```
+
+```
+> 用 NEON 指令向量化这个求和循环
+```
+
+```
+> 查询 vmlaq_f32 和 vfmaq_f32 的区别
+```
+
+主要入口（自然语言描述需求，底层自动调用对应技能）：
+
+| 场景 | 告诉 OpenCode | 底层技能 |
+|------|-------------|---------|
+| 完整优化流程 | "帮我优化这个项目的性能" | `kpbot-code-optimizer` |
+| 逐函数交互优化 | "逐函数分析并优化这个模块" | `interactive-optimizer` |
+| 查 ARM 指令 | "查询 vaddq_f32 的用法" | `arm-instructions-query` |
+| SPE 采样分析 | "用 ARM SPE 分析缓存 miss" | `arm-spe-analysis` |
+| TF 推理优化 | "帮我优化这个 TF 模型的推理性能" | `tf-inference-optimizer` |
+
+### 在 Claude Code 中
+
+安装后，Claude Code 会根据上下文自动激活相关 skills。
+
+## 支持平台
+
+- Kunpeng-0xd01
+- Kunpeng-0xd03
+- Kunpeng-0xd06
+- 通用 AArch64 平台
+
+## License
+
+[Apache-2.0](../../LICENSE)

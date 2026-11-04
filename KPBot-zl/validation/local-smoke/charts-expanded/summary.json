@@ -1,0 +1,89 @@
+{
+  "status": "complete",
+  "charts": [
+    {
+      "id": "scatter",
+      "statistics": [
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "1"
+          ],
+          "x": 0.00390625,
+          "center": 0.0071,
+          "low": null,
+          "high": null,
+          "n": 3,
+          "source_rows": [
+            0,
+            5,
+            9
+          ]
+        },
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "1"
+          ],
+          "x": 0.0078125,
+          "center": 0.0071,
+          "low": null,
+          "high": null,
+          "n": 3,
+          "source_rows": [
+            1,
+            6,
+            8
+          ]
+        },
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "6"
+          ],
+          "x": 0.0078125,
+          "center": 0.0204,
+          "low": null,
+          "high": null,
+          "n": 3,
+          "source_rows": [
+            2,
+            7,
+            10
+          ]
+        },
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "6"
+          ],
+          "x": 0.00390625,
+          "center": 0.0116,
+          "low": null,
+          "high": null,
+          "n": 3,
+          "source_rows": [
+            3,
+            4,
+            11
+          ]
+        }
+      ],
+      "figures": [
+        "scatter.svg",
+        "scatter.png"
+      ],
+      "selected_records": 12,
+      "input_records": 12,
+      "sample_level": "summary"
+    }
+  ]
+}

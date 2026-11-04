@@ -1,0 +1,10 @@
+{
+  "input": "D:\\workspace\\KPBot\\KPBot-zl\\validation\\local-smoke\\samples.csv",
+  "sha256": "f642ddd30381780803e861a7ccee74556514d88e7791d8361fecb61d30ad004c",
+  "source_row_definition": "zero-based record index after adapter; CSV excludes header",
+  "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+  "matplotlib": "3.11.2",
+  "quantile_method": "linear interpolation",
+  "std_ddof": 1,
+  "script_sha256": "ca2b733242cea148076c4de86102339da28e7eca90e8e871298b6cfc2a75167e"
+}

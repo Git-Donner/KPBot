@@ -1,0 +1,127 @@
+# ${stage_name}
+
+## 任务
+准备项目环境，建立性能基线。
+
+## 你的角色
+project preparation expert
+
+## 上下文
+用户优化目标：
+- 优化类型：${context.user_choice}
+- 项目路径：${context.project_path}
+- 代码路径：${context.code_path}
+- 函数名：${context.function_name}
+- 测试用例：${context.test_cases}
+- 测试方法：${context.test_method}
+- 目标机器要求：${context.target_machine}
+- 验证命令：${context.verification_commands}
+- 数值约束：${context.numeric_constraints}
+- 诊断预算覆盖（可选）：${context.diagnostic_budget}
+
+## 执行
+使用 Skill tool，skill 名称为 `prepare-project`
+参数：
+- project_path：${context.project_path}
+- target：${context.function_name}
+- test_cases：${context.test_cases}
+- test_method：${context.test_method}
+- target_machine：${context.target_machine}
+- verification_commands：${context.verification_commands}
+- numeric_constraints：${context.numeric_constraints}
+- diagnostic_budget：${context.diagnostic_budget}；未明确提供时使用 `{max_experiments: 3, command_timeout_seconds: 600}`
+
+## 输出格式
+返回 JSON 契约：
+```json
+{
+  "repo": {
+    "path": "<project_path>",
+    "vcs": "git|none",
+    "source_state": {
+      "head": "<Git HEAD>",
+      "dirty": true,
+      "manifest": "<相关源码/构建输入清单与内容摘要路径>",
+      "digest": "<HEAD、相关 index 与工作区内容摘要>",
+      "snapshot_path": "<可还原父源码快照的独立目录>",
+      "staged_patch": "<staged binary patch 路径，无变更时 null>",
+      "unstaged_patch": "<unstaged binary patch 路径，无变更时 null>",
+      "untracked_manifest": "<相关 untracked 文件与内容摘要清单路径，无变更时 null>",
+      "isolation_safe": true
+    },
+    "build_system": "cmake|make|meson|bazel|autotools|unknown",
+    "compiler": "<compiler version or null>",
+    "test_framework": "googletest|catch2|unity|none",
+    "compilation": {
+      "cflags": "<CFLAGS value or null>",
+      "cxxflags": "<CXXFLAGS value or null>",
+      "ldflags": "<LDFLAGS value or null>",
+      "build_type": "Release|Debug|RelWithDebInfo|MinSizeRel|unknown",
+      "flag_sources": [
+        {
+          "file": "CMakeLists.txt",
+          "variable": "CMAKE_C_FLAGS",
+          "value": "-O2 -g"
+        }
+      ],
+      "performance_flags": {
+        "optimization_level": "-O0|-O1|-O2|-O3|-Os|unknown",
+        "arch_flags": ["-march=armv8-a"],
+        "cpu_flags": ["-mcpu=tsv110"],
+        "math_flags": [],
+        "lto_enabled": false,
+        "pgo_enabled": false,
+        "auto_vectorization": "enabled|disabled|unknown"
+      }
+    }
+  },
+  "machine": {
+    "arch": "aarch64|x86_64|unknown",
+    "cpu_model": "<CPU model name>",
+    "isa_features": {
+      "simd": ["neon", "sve", "avx2"],
+      "architecture_extensions": ["crc32", "crypto"]
+    },
+    "cache_info": {
+      "l1d_size_kb": 64,
+      "cache_line_size": 64
+    },
+    "os": "Linux 5.14.0-284.11.1.el9_2.aarch64",
+    "platform_match": "true|false|partial_match",
+    "platform_note": null
+  },
+  "target": {
+    "module": "<module name or null>",
+    "source_files": ["<file1>", "<file2>"],
+    "entry_functions": ["<func1>", "<func2>"],
+    "call_chains": {}
+  },
+  "baseline": {
+    "build_ok": true,
+    "tests_pass": true,
+    "metrics": {}
+  },
+  "target_machine": {
+    "identity": "<任务要求的机器、型号或 unknown>",
+    "available": true,
+    "source": "task_requirement|observed|unknown"
+  },
+  "verification_commands": {
+    "build": [{ "command": "<command>", "source": "user|project" }],
+    "correctness": [{ "command": "<command>", "source": "user|project" }],
+    "performance": [{ "command": "<command>", "source": "user|project" }]
+  },
+  "numeric_constraints": [
+    { "name": "<constraint>", "operator": "<=|>=|==", "value": 0.001, "unit": "<unit>", "source": "user|project" }
+  ],
+  "diagnostic_budget": {
+    "max_experiments": 3,
+    "command_timeout_seconds": 600
+  },
+  "warnings": [],
+  "status": "ready" | "blocked" | "partial"
+}
+```
+
+## 引用 Skill 内容
+详见 `skills/prepare-project/SKILL.md`
