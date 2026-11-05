@@ -1,5 +1,5 @@
 新增了benchmark-visualization：
-
+```
 Plugins/code-optimizer/skills/benchmark-visualization/
 ├── SKILL.md
 ├── scripts/
@@ -15,3 +15,4 @@ Plugins/code-optimizer/skills/benchmark-visualization/
 
 tests/
 └── test_benchmark_visualization.py
+```
