@@ -1,0 +1,773 @@
+{
+  "status": "complete",
+  "charts": [
+    {
+      "id": "scatter",
+      "statistics": [
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "1"
+          ],
+          "x": 0.00390625,
+          "center": 0.0071,
+          "low": null,
+          "high": null,
+          "n": 3,
+          "source_rows": [
+            0,
+            5,
+            9
+          ]
+        },
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "1"
+          ],
+          "x": 0.0078125,
+          "center": 0.0071,
+          "low": null,
+          "high": null,
+          "n": 3,
+          "source_rows": [
+            1,
+            6,
+            8
+          ]
+        },
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "6"
+          ],
+          "x": 0.0078125,
+          "center": 0.0204,
+          "low": null,
+          "high": null,
+          "n": 3,
+          "source_rows": [
+            2,
+            7,
+            10
+          ]
+        },
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "6"
+          ],
+          "x": 0.00390625,
+          "center": 0.0116,
+          "low": null,
+          "high": null,
+          "n": 3,
+          "source_rows": [
+            3,
+            4,
+            11
+          ]
+        }
+      ],
+      "figures": [
+        "scatter.svg",
+        "scatter.png"
+      ],
+      "selected_records": 12,
+      "input_records": 12,
+      "sample_level": "summary"
+    },
+    {
+      "id": "line",
+      "statistics": [
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "1"
+          ],
+          "x": 0.00390625,
+          "center": 550.1760563380282,
+          "low": 84.00537634408603,
+          "high": 797.1938775510205,
+          "n": 3,
+          "source_rows": [
+            0,
+            5,
+            9
+          ]
+        },
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "1"
+          ],
+          "x": 0.0078125,
+          "center": 1100.3521126760563,
+          "low": 437.6750700280113,
+          "high": 1100.3521126760563,
+          "n": 3,
+          "source_rows": [
+            1,
+            6,
+            8
+          ]
+        },
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "6"
+          ],
+          "x": 0.0078125,
+          "center": 382.9656862745098,
+          "low": 111.36849607982896,
+          "high": 386.75742574257424,
+          "n": 3,
+          "source_rows": [
+            2,
+            7,
+            10
+          ]
+        },
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "6"
+          ],
+          "x": 0.00390625,
+          "center": 336.74568965517244,
+          "low": 78.125,
+          "high": 339.67391304347825,
+          "n": 3,
+          "source_rows": [
+            3,
+            4,
+            11
+          ]
+        }
+      ],
+      "figures": [
+        "line.svg",
+        "line.png"
+      ],
+      "selected_records": 12,
+      "input_records": 12,
+      "sample_level": "summary"
+    },
+    {
+      "id": "box",
+      "statistics": [
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "1"
+          ],
+          "x": 0.00390625,
+          "center": null,
+          "low": null,
+          "high": null,
+          "n": 3,
+          "source_rows": [
+            0,
+            5,
+            9
+          ]
+        },
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "1"
+          ],
+          "x": 0.0078125,
+          "center": null,
+          "low": null,
+          "high": null,
+          "n": 3,
+          "source_rows": [
+            1,
+            6,
+            8
+          ]
+        },
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "6"
+          ],
+          "x": 0.0078125,
+          "center": null,
+          "low": null,
+          "high": null,
+          "n": 3,
+          "source_rows": [
+            2,
+            7,
+            10
+          ]
+        },
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "6"
+          ],
+          "x": 0.00390625,
+          "center": null,
+          "low": null,
+          "high": null,
+          "n": 3,
+          "source_rows": [
+            3,
+            4,
+            11
+          ]
+        }
+      ],
+      "figures": [
+        "box.svg",
+        "box.png"
+      ],
+      "selected_records": 12,
+      "input_records": 12,
+      "sample_level": "summary"
+    },
+    {
+      "id": "bar",
+      "statistics": [
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "1"
+          ],
+          "x": 0.00390625,
+          "center": 0.015625,
+          "low": 0.0,
+          "high": 0.015625,
+          "n": 3,
+          "source_rows": [
+            0,
+            5,
+            9
+          ]
+        },
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "1"
+          ],
+          "x": 0.0078125,
+          "center": 0.015625,
+          "low": 0.0,
+          "high": 0.015625,
+          "n": 3,
+          "source_rows": [
+            1,
+            6,
+            8
+          ]
+        },
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "6"
+          ],
+          "x": 0.0078125,
+          "center": 0.0,
+          "low": 0.0,
+          "high": 0.015625,
+          "n": 3,
+          "source_rows": [
+            2,
+            7,
+            10
+          ]
+        },
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "6"
+          ],
+          "x": 0.00390625,
+          "center": 0.015625,
+          "low": 0.0,
+          "high": 0.015625,
+          "n": 3,
+          "source_rows": [
+            3,
+            4,
+            11
+          ]
+        }
+      ],
+      "figures": [
+        "bar.svg",
+        "bar.png"
+      ],
+      "selected_records": 12,
+      "input_records": 12,
+      "sample_level": "summary"
+    },
+    {
+      "id": "point",
+      "statistics": [
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "1"
+          ],
+          "x": 0.00390625,
+          "center": 0.021484375,
+          "low": 0.021484375,
+          "high": 0.021484375,
+          "n": 3,
+          "source_rows": [
+            0,
+            5,
+            9
+          ]
+        },
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "1"
+          ],
+          "x": 0.0078125,
+          "center": 0.0135498046875,
+          "low": 0.0135498046875,
+          "high": 0.0135498046875,
+          "n": 3,
+          "source_rows": [
+            1,
+            6,
+            8
+          ]
+        },
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "6"
+          ],
+          "x": 0.0078125,
+          "center": 0.010498046875,
+          "low": 0.010498046875,
+          "high": 0.010498046875,
+          "n": 3,
+          "source_rows": [
+            2,
+            7,
+            10
+          ]
+        },
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "6"
+          ],
+          "x": 0.00390625,
+          "center": 0.018310546875,
+          "low": 0.018310546875,
+          "high": 0.018310546875,
+          "n": 3,
+          "source_rows": [
+            3,
+            4,
+            11
+          ]
+        }
+      ],
+      "figures": [
+        "point.svg",
+        "point.png"
+      ],
+      "selected_records": 12,
+      "input_records": 12,
+      "sample_level": "summary"
+    },
+    {
+      "id": "heatmap",
+      "statistics": [
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "1"
+          ],
+          "x": 0.00390625,
+          "center": 0.0071,
+          "low": null,
+          "high": null,
+          "n": 3,
+          "source_rows": [
+            0,
+            5,
+            9
+          ]
+        },
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "1"
+          ],
+          "x": 0.0078125,
+          "center": 0.0071,
+          "low": null,
+          "high": null,
+          "n": 3,
+          "source_rows": [
+            1,
+            6,
+            8
+          ]
+        },
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "6"
+          ],
+          "x": 0.0078125,
+          "center": 0.0204,
+          "low": null,
+          "high": null,
+          "n": 3,
+          "source_rows": [
+            2,
+            7,
+            10
+          ]
+        },
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "6"
+          ],
+          "x": 0.00390625,
+          "center": 0.0116,
+          "low": null,
+          "high": null,
+          "n": 3,
+          "source_rows": [
+            3,
+            4,
+            11
+          ]
+        }
+      ],
+      "figures": [
+        "heatmap.svg",
+        "heatmap.png"
+      ],
+      "selected_records": 12,
+      "input_records": 12,
+      "sample_level": "summary"
+    },
+    {
+      "id": "hist",
+      "statistics": [
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "1"
+          ],
+          "x": 0.0078125,
+          "center": null,
+          "low": null,
+          "high": null,
+          "n": 3,
+          "source_rows": [
+            1,
+            6,
+            8
+          ]
+        },
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "6"
+          ],
+          "x": 0.0078125,
+          "center": null,
+          "low": null,
+          "high": null,
+          "n": 3,
+          "source_rows": [
+            2,
+            7,
+            10
+          ]
+        }
+      ],
+      "figures": [
+        "hist.svg",
+        "hist.png"
+      ],
+      "selected_records": 6,
+      "input_records": 12,
+      "sample_level": "summary"
+    },
+    {
+      "id": "ecdf",
+      "statistics": [
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "1"
+          ],
+          "x": 0.0078125,
+          "center": null,
+          "low": null,
+          "high": null,
+          "n": 3,
+          "source_rows": [
+            1,
+            6,
+            8
+          ]
+        },
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "6"
+          ],
+          "x": 0.0078125,
+          "center": null,
+          "low": null,
+          "high": null,
+          "n": 3,
+          "source_rows": [
+            2,
+            7,
+            10
+          ]
+        }
+      ],
+      "figures": [
+        "ecdf.svg",
+        "ecdf.png"
+      ],
+      "selected_records": 6,
+      "input_records": 12,
+      "sample_level": "summary"
+    },
+    {
+      "id": "min_ms",
+      "statistics": [
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "1"
+          ],
+          "x": 0.00390625,
+          "center": null,
+          "low": null,
+          "high": null,
+          "n": 3,
+          "source_rows": [
+            0,
+            5,
+            9
+          ]
+        },
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "1"
+          ],
+          "x": 0.0078125,
+          "center": null,
+          "low": null,
+          "high": null,
+          "n": 3,
+          "source_rows": [
+            1,
+            6,
+            8
+          ]
+        },
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "6"
+          ],
+          "x": 0.0078125,
+          "center": null,
+          "low": null,
+          "high": null,
+          "n": 3,
+          "source_rows": [
+            2,
+            7,
+            10
+          ]
+        },
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "6"
+          ],
+          "x": 0.00390625,
+          "center": null,
+          "low": null,
+          "high": null,
+          "n": 3,
+          "source_rows": [
+            3,
+            4,
+            11
+          ]
+        }
+      ],
+      "figures": [
+        "min_ms.svg",
+        "min_ms.png"
+      ],
+      "selected_records": 12,
+      "input_records": 12,
+      "sample_level": "summary"
+    },
+    {
+      "id": "max_ms",
+      "statistics": [
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "1"
+          ],
+          "x": 0.00390625,
+          "center": null,
+          "low": null,
+          "high": null,
+          "n": 3,
+          "source_rows": [
+            0,
+            5,
+            9
+          ]
+        },
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "1"
+          ],
+          "x": 0.0078125,
+          "center": null,
+          "low": null,
+          "high": null,
+          "n": 3,
+          "source_rows": [
+            1,
+            6,
+            8
+          ]
+        },
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "6"
+          ],
+          "x": 0.0078125,
+          "center": null,
+          "low": null,
+          "high": null,
+          "n": 3,
+          "source_rows": [
+            2,
+            7,
+            10
+          ]
+        },
+        {
+          "facet": [
+            "compressible"
+          ],
+          "series": [
+            "6"
+          ],
+          "x": 0.00390625,
+          "center": null,
+          "low": null,
+          "high": null,
+          "n": 3,
+          "source_rows": [
+            3,
+            4,
+            11
+          ]
+        }
+      ],
+      "figures": [
+        "max_ms.svg",
+        "max_ms.png"
+      ],
+      "selected_records": 12,
+      "input_records": 12,
+      "sample_level": "summary"
+    }
+  ]
+}

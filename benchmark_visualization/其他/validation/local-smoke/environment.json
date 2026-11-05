@@ -1,0 +1,28 @@
+{
+  "platform": "Windows-11-10.0.26200-SP0",
+  "machine": "AMD64",
+  "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+  "zlib": "1.3.2",
+  "cpu_count": 14,
+  "command": [
+    "KPBot-zl/validation/server-acceptance/collect.py",
+    "--output",
+    "KPBot-zl/validation/local-smoke",
+    "--sizes",
+    "4096,8192",
+    "--levels",
+    "1,6",
+    "--workloads",
+    "compressible",
+    "--repeats",
+    "3",
+    "--seconds",
+    "0.01"
+  ],
+  "warmup": "one compression per fresh process",
+  "sample_level": "per-run median of inner operations",
+  "seed": 20261104,
+  "status": "complete",
+  "affinity": null,
+  "records": 12
+}

@@ -1,0 +1,51 @@
+{
+  "inputs": [
+    {
+      "path": "D:\\workspace\\KPBot\\KPBot-zl\\validation\\visualization-revision\\prepared\\baseline.csv",
+      "format": "csv",
+      "dimensions": {
+        "version": "baseline"
+      }
+    },
+    {
+      "path": "D:\\workspace\\KPBot\\KPBot-zl\\validation\\visualization-revision\\prepared\\candidate.csv",
+      "format": "csv",
+      "dimensions": {
+        "version": "candidate"
+      }
+    }
+  ],
+  "mapping": {
+    "metrics": [
+      {
+        "name": "latency",
+        "column": "latency_ms",
+        "unit": "ms",
+        "sample_level": "independent_run"
+      }
+    ]
+  },
+  "charts": [
+    {
+      "id": "latency",
+      "type": "bar",
+      "metric": "latency",
+      "x": "case",
+      "series": "version",
+      "aggregate": "mean",
+      "unit_id": "run_id",
+      "title": "Simulated independent experiments",
+      "label_map": {
+        "query_case_with_very_long_name_large_dimension_and_multiple_compiler_options": "A"
+      },
+      "spread": "minmax"
+    }
+  ],
+  "output": {
+    "formats": [
+      "svg",
+      "png"
+    ],
+    "run_name": "v1"
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "datasets": {
+    "compressible-4096": {
+      "baseline_median": 336.74568965517244,
+      "candidate_median": 550.1760563380282,
+      "speedup": 1.6338028169014083,
+      "improvement_percent": 63.380281690140826,
+      "baseline_samples": 3,
+      "candidate_samples": 3,
+      "baseline_statistics": {
+        "min": 78.125,
+        "max": 339.67391304347825,
+        "mad": 2.9282233883058097,
+        "sample_count_below_three": false
+      },
+      "candidate_statistics": {
+        "min": 84.00537634408603,
+        "max": 797.1938775510205,
+        "mad": 247.01782121299232,
+        "sample_count_below_three": false
+      },
+      "correctness": {
+        "correctness": {
+          "available": true,
+          "baseline_median": 1.0,
+          "candidate_median": 1.0,
+          "delta": 0.0
+        }
+      }
+    },
+    "compressible-8192": {
+      "baseline_median": 382.9656862745098,
+      "candidate_median": 1100.3521126760563,
+      "speedup": 2.8732394366197185,
+      "improvement_percent": 187.32394366197184,
+      "baseline_samples": 3,
+      "candidate_samples": 3,
+      "baseline_statistics": {
+        "min": 111.36849607982896,
+        "max": 386.75742574257424,
+        "mad": 3.7917394680644634,
+        "sample_count_below_three": false
+      },
+      "candidate_statistics": {
+        "min": 437.6750700280113,
+        "max": 1100.3521126760563,
+        "mad": 0.0,
+        "sample_count_below_three": false
+      },
+      "correctness": {
+        "correctness": {
+          "available": true,
+          "baseline_median": 1.0,
+          "candidate_median": 1.0,
+          "delta": 0.0
+        }
+      }
+    }
+  },
+  "geomean_speedup": 2.1666348758342995,
+  "geomean_improvement_percent": 116.66348758342994
+}

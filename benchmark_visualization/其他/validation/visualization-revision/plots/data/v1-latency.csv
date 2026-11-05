@@ -1,0 +1,7 @@
+source_row,source_file,source_record,x,value,series,facet,unit_id
+0,D:\workspace\KPBot\KPBot-zl\validation\visualization-revision\prepared\baseline.csv,0,query_case_with_very_long_name_large_dimension_and_multiple_compiler_options,10.0,"('baseline',)",(),baseline-1
+1,D:\workspace\KPBot\KPBot-zl\validation\visualization-revision\prepared\baseline.csv,1,query_case_with_very_long_name_large_dimension_and_multiple_compiler_options,15.0,"('baseline',)",(),baseline-2
+2,D:\workspace\KPBot\KPBot-zl\validation\visualization-revision\prepared\baseline.csv,2,query_case_with_very_long_name_large_dimension_and_multiple_compiler_options,20.0,"('baseline',)",(),baseline-3
+3,D:\workspace\KPBot\KPBot-zl\validation\visualization-revision\prepared\candidate.csv,0,query_case_with_very_long_name_large_dimension_and_multiple_compiler_options,11.0,"('candidate',)",(),candidate-1
+4,D:\workspace\KPBot\KPBot-zl\validation\visualization-revision\prepared\candidate.csv,1,query_case_with_very_long_name_large_dimension_and_multiple_compiler_options,17.0,"('candidate',)",(),candidate-2
+5,D:\workspace\KPBot\KPBot-zl\validation\visualization-revision\prepared\candidate.csv,2,query_case_with_very_long_name_large_dimension_and_multiple_compiler_options,24.0,"('candidate',)",(),candidate-3

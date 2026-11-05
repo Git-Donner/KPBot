@@ -1,0 +1,52 @@
+{
+  "status": "complete",
+  "charts": [
+    {
+      "id": "latency",
+      "statistics": [
+        {
+          "facet": [],
+          "series": [
+            "baseline"
+          ],
+          "x": "query_case_with_very_long_name_large_dimension_and_multiple_compiler_options",
+          "center": 15.0,
+          "low": 10.0,
+          "high": 20.0,
+          "n": 3,
+          "source_rows": [
+            0,
+            1,
+            2
+          ]
+        },
+        {
+          "facet": [],
+          "series": [
+            "candidate"
+          ],
+          "x": "query_case_with_very_long_name_large_dimension_and_multiple_compiler_options",
+          "center": 17.333333333333332,
+          "low": 11.0,
+          "high": 24.0,
+          "n": 3,
+          "source_rows": [
+            3,
+            4,
+            5
+          ]
+        }
+      ],
+      "figures": [
+        "v2-latency.svg",
+        "v2-latency.png"
+      ],
+      "label_map": {
+        "query_case_with_very_long_name_large_dimension_and_multiple_compiler_options": "A"
+      },
+      "selected_records": 6,
+      "input_records": 6,
+      "sample_level": "independent_run"
+    }
+  ]
+}

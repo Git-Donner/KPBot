@@ -1,0 +1,26 @@
+{
+  "inputs": [
+    {
+      "path": "D:\\workspace\\KPBot\\KPBot-zl\\validation\\visualization-revision\\prepared\\baseline.csv",
+      "format": "csv",
+      "dimensions": {
+        "version": "baseline"
+      },
+      "sha256": "d2e15af546e7e510c9eb4b67f49e1d6c9acc8d45f77aa7f1a2272ee65c2d9215"
+    },
+    {
+      "path": "D:\\workspace\\KPBot\\KPBot-zl\\validation\\visualization-revision\\prepared\\candidate.csv",
+      "format": "csv",
+      "dimensions": {
+        "version": "candidate"
+      },
+      "sha256": "1d67b35001a5e75ecaccd42f4571a06ca656b58c1cc92d08ddd78ebf50819eac"
+    }
+  ],
+  "source_row_definition": "zero-based record index after adapter; CSV excludes header",
+  "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+  "matplotlib": "3.11.2",
+  "quantile_method": "linear interpolation",
+  "std_ddof": 1,
+  "script_sha256": "2c4ce0e3f900e5d8d2150b47ac5efb707fe582e7c83cb31dae5efba0d674d115"
+}
