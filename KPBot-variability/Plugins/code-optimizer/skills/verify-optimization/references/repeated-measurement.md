@@ -48,6 +48,8 @@
 
 输入支持多个 CSV（UTF-8，可 BOM）、TSV、JSON 记录数组；自由格式 TXT/宽表先由 agent reshape。必需列为 `group,run_id,metric,unit,value`；自定义维度列通过 `--dimensions` 指定。每个分组/指标内 run_id 唯一，内循环必须先归约，不能自动去重。混合运行批次应把 batch 纳入维度。失败记录保存在尝试清单，勿把空值当零交给统计器。
 
+自定义维度不能与必需列或输出字段 `statistics`、`observations` 重名；如原始数据使用这些名称，reshape 时重命名。CSV/TSV 每行列数必须与表头一致，错误引号或多余列将报错，不静默忽略。
+
 ```bash
 python3 <skill_dir>/scripts/summarize_repeats.py baseline.csv candidate.tsv \
   --dimensions workload,threads --output repeats-summary.json

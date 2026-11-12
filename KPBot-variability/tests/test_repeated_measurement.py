@@ -70,9 +70,35 @@ class RepeatedMeasurementTests(unittest.TestCase):
                     M.summarize([p])
 
     def test_dimension_errors_rejected(self):
-        for dims in (['value'], ['threads', 'threads']):
+        for dims in (['value'], ['threads', 'threads'], ['statistics'], ['observations']):
             with self.assertRaises(ValueError):
                 M.summarize([], dims)
+
+    def test_malformed_csv_cli_rejected_without_output(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p, out = Path(tmp)/'bad.csv', Path(tmp)/'out.json'
+            header = 'group,run_id,metric,unit,value\n'
+            for body in ('A,1,time,ms,2,extra\n', 'A,1,time,ms\n', 'A,1,time,ms,"2\n'):
+                p.write_text(header + body, encoding='utf-8')
+                result = subprocess.run([sys.executable, '-B', '-S', str(SCRIPT), str(p), '--output', str(out)], capture_output=True, text=True)
+                self.assertEqual(result.returncode, 2, result.stderr)
+                self.assertNotIn('Traceback', result.stderr)
+                self.assertFalse(out.exists())
+
+    def test_installed_script_from_unrelated_working_directory(self):
+        import shutil
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            p = root / 'input.json'
+            p.write_text(json.dumps([dict(group='A', run_id=i, metric='time', unit='ms', value=v) for i, v in enumerate([1, 2, 3])]), encoding='utf-8')
+            for layout in ('.claude', '.opencode'):
+                installed = root / layout / 'skills/verify-optimization/scripts/summarize_repeats.py'
+                installed.parent.mkdir(parents=True)
+                shutil.copyfile(SCRIPT, installed)
+                output = root / (layout + '.json')
+                result = subprocess.run([sys.executable, '-B', '-S', str(installed), str(p), '--output', str(output)], cwd=root, capture_output=True, text=True)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(json.loads(output.read_text(encoding='utf-8'))['groups'][0]['statistics']['sample_sd'], 1)
 
     def test_cli_json_and_no_overwrite(self):
         with tempfile.TemporaryDirectory() as tmp:

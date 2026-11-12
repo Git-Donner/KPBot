@@ -27,9 +27,9 @@ def describe(values):
 
 
 def summarize(paths, dimensions=()):
-    reserved = {'group', 'run_id', 'metric', 'unit', 'value'}
+    reserved = {'group', 'run_id', 'metric', 'unit', 'value', 'statistics', 'observations'}
     if len(set(dimensions)) != len(dimensions) or reserved.intersection(dimensions):
-        raise ValueError('dimensions must be unique and distinct from required columns')
+        raise ValueError('dimensions must be unique and distinct from required/output columns')
     groups, sources, seen_paths = {}, [], set()
     for name in paths:
         path = Path(name).resolve()
@@ -43,10 +43,12 @@ def summarize(paths, dimensions=()):
             if not isinstance(rows, list):
                 raise ValueError('JSON input must be a record array')
         elif path.suffix.lower() in ('.csv', '.tsv'):
-            reader = csv.DictReader(io.StringIO(content), delimiter='\t' if path.suffix.lower() == '.tsv' else ',')
+            reader = csv.DictReader(io.StringIO(content), delimiter='\t' if path.suffix.lower() == '.tsv' else ',', strict=True)
             if not reader.fieldnames or len(set(reader.fieldnames)) != len(reader.fieldnames):
                 raise ValueError('missing or duplicate column names')
             rows = list(reader)
+            if any(None in row or any(v is None for v in row.values()) for row in rows):
+                raise ValueError('CSV/TSV row width does not match header')
         else:
             raise ValueError('reshape input to CSV, TSV or JSON first')
         if not rows:
@@ -90,7 +92,7 @@ def main():
         with open(args.output, 'x', encoding='utf-8') as stream:
             json.dump(result, stream, ensure_ascii=False, indent=2, allow_nan=False)
             stream.write('\n')
-    except (OSError, ValueError, TypeError, OverflowError) as exc:
+    except (OSError, ValueError, TypeError, OverflowError, csv.Error) as exc:
         parser.exit(2, f'error: {exc}\n')
 
 
